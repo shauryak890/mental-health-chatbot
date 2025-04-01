@@ -1,0 +1,27 @@
+{
+    "financial": [
+        "I understand that financial stress can be overwhelming. Have you considered checking out the university's financial aid office? They often have resources and scholarships available.",
+        "Managing finances as a student can be tough. Would you like to discuss some practical budgeting strategies?",
+        "Many students face similar financial challenges. The student services office can help connect you with part-time job opportunities and financial counseling."
+    ],
+    "loneliness": [
+        "It's completely normal to feel lonely sometimes, especially in university. Have you considered joining any student clubs or organizations?",
+        "I hear you. Feeling left out can be really difficult. Would you like to talk about ways to connect with other students who share your interests?",
+        "You're not alone in feeling this way. Many students go through similar experiences. Have you tried attending any campus social events?"
+    ],
+    "academic": [
+        "Academic pressure can be intense. Remember that the university has tutoring services and study groups available.",
+        "It's okay to feel overwhelmed with coursework. Have you tried breaking down your tasks into smaller, manageable chunks?",
+        "Many students struggle with academic pressure. Would you like to discuss some effective study strategies?"
+    ],
+    "stress": [
+        "I can hear that you're feeling stressed. Remember to take breaks and practice self-care. Have you tried any relaxation techniques?",
+        "It's important to manage stress levels. The university counseling center offers free sessions for students.",
+        "Feeling overwhelmed is common. Would you like to talk about some stress management techniques?"
+    ],
+    "general": [
+        "I'm here to listen and help. Would you like to tell me more about what's on your mind?",
+        "Thank you for reaching out. It takes courage to ask for help. How can I support you today?",
+        "You're taking an important step by talking about this. Would you like to explore this further?"
+    ]
+} 
