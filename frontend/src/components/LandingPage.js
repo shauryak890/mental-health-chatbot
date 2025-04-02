@@ -22,7 +22,8 @@ import {
   faHandshakeAngle,
   faRocket,
   faShieldHalved,
-  faHeadset
+  faHeadset,
+  faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
 
 function LandingPage({ onStartChat }) {
@@ -87,18 +88,41 @@ function LandingPage({ onStartChat }) {
       </nav>
 
       <section className="hero-section">
-        <motion.div className="hero-content" {...fadeIn}>
-          <h1>Your Mental Health Matters</h1>
+        <motion.div 
+          className="hero-content"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          <div className="hero-badge">
+            <span>🎓 For Students, By Students</span>
+          </div>
+          <h1>
+            Your Mental Health
+            <span className="gradient-text"> Matters</span>
+            <div className="hero-decoration"></div>
+          </h1>
           <p>A safe, confidential space for university students to find support, guidance, and understanding</p>
-          <motion.button 
-            className="primary-button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onStartChat}
-          >
-            <FontAwesomeIcon icon={faComments} className="button-icon" />
-            Chat With Us Now
-          </motion.button>
+          <motion.div className="hero-buttons">
+            <motion.button 
+              className="primary-button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onStartChat}
+            >
+              <FontAwesomeIcon icon={faComments} className="button-icon" />
+              Start Chatting
+              <span className="button-shine"></span>
+            </motion.button>
+            <motion.button 
+              className="secondary-button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Learn More
+              <FontAwesomeIcon icon={faArrowRight} className="button-icon" />
+            </motion.button>
+          </motion.div>
         </motion.div>
         <motion.div 
           className="hero-stats"
@@ -168,13 +192,16 @@ function LandingPage({ onStartChat }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
             >
-              <div className="feature-card-icons">
-                <FontAwesomeIcon icon={feature.icon} className="feature-icon main-icon" />
+              <div className="feature-icons-container">
+                <div className="main-icon-wrapper">
+                  <FontAwesomeIcon icon={feature.icon} className="feature-icon main-icon" />
+                </div>
                 <div className="secondary-icons">
                   {feature.secondaryIcons.map((icon, i) => (
-                    <FontAwesomeIcon key={i} icon={icon} className="feature-icon secondary-icon" />
+                    <div key={i} className="secondary-icon-wrapper">
+                      <FontAwesomeIcon icon={icon} className="feature-icon secondary-icon" />
+                    </div>
                   ))}
                 </div>
               </div>
