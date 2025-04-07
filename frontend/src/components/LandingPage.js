@@ -1,188 +1,243 @@
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faMoneyBill, 
+  faMoneyBillWave,
   faBook, 
-  faUsers, 
+  faUserFriends, 
   faBrain,
   faHeartPulse,
   faShieldHeart,
   faComments,
-  faGraduationCap,
-  faClock,
+  faArrowRight,
+  faCalendarCheck,
   faHandHoldingHeart,
   faLightbulb,
-  faShieldAlt,
-  faUserGraduate,
-  faChartLine,
-  faLaptopCode,
-  faMedal,
+  faGraduationCap,
   faPuzzlePiece,
-  faHandshakeAngle,
   faRocket,
-  faShieldHalved,
-  faHeadset,
-  faArrowRight
+  faMountain,
+  faCompass
 } from '@fortawesome/free-solid-svg-icons';
+import mentalWellnessSvg from '../images/mental-wellness.svg';
 
 function LandingPage({ onStartChat }) {
+  // Animation variants
   const fadeIn = {
-    initial: { opacity: 0, y: 20 },
+    initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.5 }
   };
-
+  
+  // Parallax refs and effects
+  const featuresRef = useRef(null);
+  const benefitsRef = useRef(null);
+  const heroRef = useRef(null);
+  const ctaRef = useRef(null);
+  
+  // Scroll animations
+  const { scrollY, scrollYProgress } = useScroll();
+  const heroY = useTransform(scrollY, [0, 500], [0, -150]);
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.5]);
+  
+  // Interactive cursor effect
   useEffect(() => {
-    const cards = document.querySelectorAll('.feature-card, .stat-item, .about-feature');
-    
     const handleMouseMove = (e) => {
-      const card = e.currentTarget;
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const cards = document.querySelectorAll('.feature-card, .benefit-card');
+      const x = e.clientX;
+      const y = e.clientY;
       
-      card.style.setProperty('--mouse-x', `${x}px`);
-      card.style.setProperty('--mouse-y', `${y}px`);
-    };
-
-    const handleMouseLeave = (e) => {
-      const card = e.currentTarget;
-      card.style.setProperty('--mouse-x', '50%');
-      card.style.setProperty('--mouse-y', '50%');
-    };
-
-    cards.forEach(card => {
-      card.addEventListener('mousemove', handleMouseMove);
-      card.addEventListener('mouseleave', handleMouseLeave);
-    });
-
-    return () => {
       cards.forEach(card => {
-        card.removeEventListener('mousemove', handleMouseMove);
-        card.removeEventListener('mouseleave', handleMouseLeave);
+        const rect = card.getBoundingClientRect();
+        // Calculate distance from mouse to card center
+        const cardCenterX = rect.left + rect.width / 2;
+        const cardCenterY = rect.top + rect.height / 2;
+        
+        // Calculate distance
+        const distX = (x - cardCenterX) / 25; // Adjust divisor for effect intensity
+        const distY = (y - cardCenterY) / 25;
+        
+        // Only apply effect if mouse is relatively close to card
+        const distance = Math.sqrt(Math.pow(x - cardCenterX, 2) + Math.pow(y - cardCenterY, 2));
+        
+        if (distance < 400) { // Adjust for activation distance
+          card.style.transform = `perspective(1000px) rotateX(${-distY * 0.2}deg) rotateY(${distX * 0.2}deg) translateZ(10px)`;
+        } else {
+          card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+        }
+      });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+  
+  // Add scroll-triggered animations
+  useEffect(() => {
+    const addFloatingAnimation = () => {
+      const decorativeElements = document.querySelectorAll('.feature-icon-container, .benefit-icon-container');
+      
+      decorativeElements.forEach((element, index) => {
+        // Create slight random variation in animation
+        const delay = index * 0.2;
+        const duration = 3 + Math.random();
+        
+        element.style.animation = `float ${duration}s ease-in-out ${delay}s infinite alternate`;
+      });
+    };
+    
+    addFloatingAnimation();
+    
+    // Add reveal-on-scroll class to appropriate elements
+    const scrollElements = document.querySelectorAll('.feature-card, .benefit-card, .hero-content, .cta-container');
+    scrollElements.forEach(element => {
+      element.classList.add('reveal-on-scroll');
+    });
+    
+    // Observer for scroll animations
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      },
+      {
+        root: null,
+        threshold: 0.1,
+        rootMargin: '-50px'
+      }
+    );
+    
+    scrollElements.forEach(element => {
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(20px)';
+      observer.observe(element);
+    });
+    
+    return () => {
+      scrollElements.forEach(element => {
+        observer.unobserve(element);
       });
     };
   }, []);
 
   return (
     <div className="landing-container">
-      <nav className="navbar">
-        <motion.div 
-          className="logo"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+      <a href="#main-content" className="skip-to-content">Skip to content</a>
+      
+      <motion.div 
+        className="scroll-progress"
+        style={{ scaleX: scrollYProgress }}
+      />
+      
+      <div className="navbar">
+        <div className="logo">
           <FontAwesomeIcon icon={faHeartPulse} className="logo-icon" />
           MindfulChat
-        </motion.div>
-        <motion.button 
-          className="start-chat-button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onStartChat}
-        >
-          Start Chat
-        </motion.button>
-      </nav>
+        </div>
+        <nav className="nav-links">
+          <Link to="/" className="active">Home</Link>
+          <Link to="/resources">Resources</Link>
+          <Link to="/chat" onClick={onStartChat}>Chat</Link>
+        </nav>
+      </div>
 
-      <section className="hero-section">
+      <motion.section 
+        className="hero-section"
+        ref={heroRef}
+        id="main-content"
+        style={{ y: heroY, opacity: heroOpacity }}
+      >
         <motion.div 
           className="hero-content"
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <div className="hero-badge">
-            <span>🎓 For Students, By Students</span>
+            <span>University Student Support</span>
           </div>
           <h1>
-            Your Mental Health
-            <span className="gradient-text"> Matters</span>
-            <div className="hero-decoration"></div>
+            Your Journey to 
+            <span className="gradient-text"> Mental Clarity</span>
           </h1>
-          <p>A safe, confidential space for university students to find support, guidance, and understanding</p>
+          <p>A thoughtful space created by students who understand the unique challenges of university life. We're here whenever you need perspective.</p>
           <motion.div className="hero-buttons">
             <motion.button 
               className="primary-button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={onStartChat}
             >
               <FontAwesomeIcon icon={faComments} className="button-icon" />
-              Start Chatting
-              <span className="button-shine"></span>
+              Begin Your Conversation
             </motion.button>
             <motion.button 
               className="secondary-button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              Learn More
+              Explore Our Approach
               <FontAwesomeIcon icon={faArrowRight} className="button-icon" />
             </motion.button>
           </motion.div>
         </motion.div>
         <motion.div 
-          className="hero-stats"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          className="hero-image"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.7 }}
         >
-          <div className="stat-item">
-            <div className="icon-container">
-              <FontAwesomeIcon icon={faUsers} className="stat-icon" />
-            </div>
-            <h3>24/7 Support</h3>
-            <p>Always here when you need us</p>
-          </div>
-          <div className="stat-item">
-            <FontAwesomeIcon icon={faShieldHeart} className="stat-icon" />
-            <h3>100% Confidential</h3>
-            <p>Your privacy is our priority</p>
-          </div>
-          <div className="stat-item">
-            <FontAwesomeIcon icon={faGraduationCap} className="stat-icon" />
-            <h3>Student-Focused</h3>
-            <p>Tailored for university life</p>
+          <img 
+            src={mentalWellnessSvg} 
+            alt="Mental wellness illustration showing a mind garden with flowers representing growth and peace" 
+          />
+          <div className="floating-elements">
+            <div className="floating-element" style={{ left: '10%', top: '20%' }}></div>
+            <div className="floating-element" style={{ right: '15%', bottom: '25%' }}></div>
+            <div className="floating-element" style={{ left: '20%', bottom: '15%' }}></div>
           </div>
         </motion.div>
-      </section>
+      </motion.section>
 
-      <section className="features-section">
+      <section className="features-section" ref={featuresRef}>
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
         >
-          How We Can Help
+          Navigating Your Unique Challenges
         </motion.h2>
+        <p className="section-subtitle">Student life presents complex, often overlapping challenges that require a nuanced understanding</p>
         <div className="features-grid">
           {[
             {
-              icon: faMoneyBill,
-              title: "Financial Stress",
-              description: "Navigate financial challenges with guidance on scholarships, budgeting, and financial aid resources",
-              secondaryIcons: [faChartLine, faRocket]
+              icon: faMoneyBillWave,
+              title: "Financial Navigation",
+              description: "Breaking down the complex world of student finances, from uncovering hidden scholarship opportunities to creating sustainable spending patterns that reduce anxiety"
             },
             {
-              icon: faBook,
-              title: "Academic Pressure",
-              description: "Develop effective study strategies and manage academic stress with personalized support",
-              secondaryIcons: [faLaptopCode, faMedal]
+              icon: faGraduationCap,
+              title: "Academic Balance",
+              description: "Developing personalized approaches to workload management, perfectionism, and finding meaning in your studies beyond just grades and performance"
             },
             {
-              icon: faUsers,
-              title: "Social Connection",
-              description: "Build meaningful relationships and overcome feelings of isolation in university life",
-              secondaryIcons: [faHandshakeAngle, faPuzzlePiece]
+              icon: faPuzzlePiece,
+              title: "Authentic Connection",
+              description: "Moving beyond superficial interactions to build meaningful relationships that combat the increasingly documented phenomenon of campus loneliness"
             },
             {
-              icon: faBrain,
-              title: "Mental Wellness",
-              description: "Learn practical techniques for stress management, anxiety relief, and emotional balance",
-              secondaryIcons: [faShieldHalved, faHeadset]
+              icon: faMountain,
+              title: "Emotional Resilience",
+              description: "Building adaptive coping mechanisms tailored to your personal experience, creating sustainable practices that evolve with your journey"
             }
           ].map((feature, index) => (
             <motion.div 
@@ -190,20 +245,11 @@ function LandingPage({ onStartChat }) {
               className="feature-card"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: index * 0.1 }}
             >
-              <div className="feature-icons-container">
-                <div className="main-icon-wrapper">
-                  <FontAwesomeIcon icon={feature.icon} className="feature-icon main-icon" />
-                </div>
-                <div className="secondary-icons">
-                  {feature.secondaryIcons.map((icon, i) => (
-                    <div key={i} className="secondary-icon-wrapper">
-                      <FontAwesomeIcon icon={icon} className="feature-icon secondary-icon" />
-                    </div>
-                  ))}
-                </div>
+              <div className="feature-icon-container">
+                <FontAwesomeIcon icon={feature.icon} className="feature-icon" />
               </div>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
@@ -212,109 +258,90 @@ function LandingPage({ onStartChat }) {
         </div>
       </section>
 
-      <section className="about-section">
-        <motion.div 
-          className="about-content"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <h2>Empowering Student Wellness</h2>
-          <p>
-            At MindfulChat, we understand the unique challenges of university life. 
-            Our AI-powered platform combines cutting-edge technology with empathetic 
-            support to provide you with instant, personalized guidance whenever you need it.
-          </p>
-          
-          <div className="about-features">
-            <motion.div 
-              className="about-feature"
-              whileHover={{ y: -10 }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div className="icon-container">
-                <FontAwesomeIcon 
-                  icon={faClock} 
-                  className="about-feature-icon"
-                />
-              </div>
-              <h4>24/7 Availability</h4>
-              <p>Access support anytime, anywhere. We're here for you around the clock, ensuring you never feel alone in your journey.</p>
-            </motion.div>
-
-            <motion.div 
-              className="about-feature"
-              whileHover={{ y: -10 }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <FontAwesomeIcon 
-                icon={faHandHoldingHeart} 
-                className="about-feature-icon"
-                style={{ display: 'block', marginBottom: '1rem' }}
-              />
-              <h4>Personalized Care</h4>
-              <p>Experience support tailored to your unique situation, with adaptive responses that understand your specific needs.</p>
-            </motion.div>
-
-            <motion.div 
-              className="about-feature"
-              whileHover={{ y: -10 }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              <FontAwesomeIcon 
-                icon={faShieldAlt} 
-                className="about-feature-icon"
-                style={{ display: 'block', marginBottom: '1rem' }}
-              />
-              <h4>Safe Space</h4>
-              <p>Your privacy and security are our top priorities. Feel confident sharing your thoughts in a completely confidential environment.</p>
-            </motion.div>
-          </div>
-
-          <motion.div 
-            className="about-stats"
+      <section className="benefits-section" ref={benefitsRef}>
+        <div className="benefits-content">
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.8 }}
+            transition={{ duration: 0.6 }}
           >
-            {/* Add any additional statistics or information here */}
-          </motion.div>
+            Our Thoughtful Approach
+          </motion.h2>
+          <p className="section-subtitle">Beyond just quick fixes, we've designed an experience that respects the complexity of your mental landscape</p>
+          <div className="benefits-grid">
+            {[
+              {
+                icon: faCompass,
+                title: "Context-Aware Guidance",
+                description: "Responses that understand the specific realities of university environments, not generic advice from chatbots"
+              },
+              {
+                icon: faShieldHeart,
+                title: "Safety Through Design",
+                description: "Built with student privacy as a foundational principle, not as an afterthought"
+              },
+              {
+                icon: faHandHoldingHeart,
+                title: "Judgment-Free Zone",
+                description: "A space where your thoughts are met with understanding rather than evaluation or assessment"
+              },
+              {
+                icon: faRocket,
+                title: "Gateway to Resources",
+                description: "Connecting you to specialized campus resources when conversations need to transition to in-person support"
+              }
+            ].map((benefit, index) => (
+              <motion.div
+                key={index}
+                className="benefit-card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="benefit-icon-container">
+                  <FontAwesomeIcon icon={benefit.icon} className="benefit-icon" />
+                </div>
+                <div className="benefit-content">
+                  <h3>{benefit.title}</h3>
+                  <p>{benefit.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="cta-section" ref={ctaRef}>
+        <motion.div
+          className="cta-container"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <h2>Take the first step in your mental clarity journey</h2>
+          <p>Start a conversation that acknowledges the full complexity of what you're going through—no simplistic answers, just thoughtful guidance.</p>
+          <motion.button
+            className="primary-button cta-button"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onStartChat}
+          >
+            <FontAwesomeIcon icon={faComments} className="button-icon" />
+            Begin Your Conversation
+          </motion.button>
         </motion.div>
       </section>
 
       <footer className="footer">
         <div className="footer-content">
-          <div className="footer-section">
-            <h3>Emergency Contacts</h3>
-            <p>National Crisis Hotline: 988</p>
-            <p>University Counseling: (XXX) XXX-XXXX</p>
-            <p>Emergency Services: 911</p>
+          <div className="footer-logo">
+            <FontAwesomeIcon icon={faHeartPulse} className="logo-icon" />
+            MindfulChat
           </div>
-          <div className="footer-section">
-            <h3>Quick Links</h3>
-            <p>Mental Health Resources</p>
-            <p>Student Support Services</p>
-            <p>Wellness Programs</p>
-          </div>
-          <div className="footer-section">
-            <h3>Connect With Us</h3>
-            <p>Email: support@mindfulchat.com</p>
-            <p>Privacy Policy</p>
-            <p>Terms of Service</p>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>© 2024 MindfulChat. All rights reserved.</p>
+          <p className="footer-copyright">© {new Date().getFullYear()} MindfulChat. All rights reserved.</p>
+          <p className="footer-disclaimer">MindfulChat is not a replacement for professional mental health services.</p>
         </div>
       </footer>
     </div>
