@@ -12,7 +12,8 @@ import {
   faHome,
   faBook,
   faHeartPulse,
-  faComments
+  faComments,
+  faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 
@@ -25,6 +26,8 @@ function Chatbot({ onBack }) {
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [userId, setUserId] = useState(localStorage.getItem('mindfulchat_user_id') || '');
+  const [conversationHistory, setConversationHistory] = useState([]);
 
   // Auto Scroll
   const scrollToBottom = () => {
@@ -42,22 +45,81 @@ function Chatbot({ onBack }) {
     // Add welcome message
     if (messages.length === 0) {
       setMessages([{
-        text: "Hello! I'm here to support you. Feel free to share what's on your mind or what you're experiencing, and I'll do my best to help.",
+        text: "Hey there! 👋 I'm your friend in this space. Having a rough day or just want to chat? I'm all ears! College life can be a lot sometimes, so whatever's on your mind, let's talk about it.",
         sender: 'bot',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     }
   }, []);
 
+  // Load conversation history
+  useEffect(() => {
+    // Retrieve conversation history if userId exists
+    if (userId) {
+      fetchConversationHistory();
+    }
+  }, [userId]);
+
+  // Functions to interact with the backend
+  const fetchConversationHistory = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/history?userId=${userId}`);
+      const data = await response.json();
+      
+      if (data.history && data.history.length > 0) {
+        // Format the history into messages
+        const formattedMessages = data.history.map(msg => ({
+          text: msg.text,
+          sender: msg.role === 'user' ? 'user' : 'bot',
+          category: msg.category || 'general',
+          timestamp: msg.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+        
+        setMessages(formattedMessages);
+      } else if (messages.length === 0) {
+        // If no history and no welcome message, add the welcome message
+        setMessages([{
+          text: "Hey there! 👋 I'm your friend in this space. Having a rough day or just want to chat? I'm all ears! College life can be a lot sometimes, so whatever's on your mind, let's talk about it.",
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
+      }
+    } catch (error) {
+      console.error('Error fetching conversation history:', error);
+    }
+  };
+
+  const resetConversation = async () => {
+    try {
+      await fetch('http://localhost:5000/api/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      
+      setMessages([{
+        text: "Hey there! 👋 I'm your friend in this space. Having a rough day or just want to chat? I'm all ears! College life can be a lot sometimes, so whatever's on your mind, let's talk about it.",
+        sender: 'bot',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    } catch (error) {
+      console.error('Error resetting conversation:', error);
+    }
+  };
+
   // Message Handlers
   const sendMessage = async (e) => {
     e?.preventDefault();
     if (!inputMessage.trim()) return;
 
+    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
     const userMessage = {
       text: inputMessage,
       sender: 'user',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: currentTime
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -71,10 +133,20 @@ function Chatbot({ onBack }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: inputMessage }),
+        body: JSON.stringify({ 
+          message: inputMessage,
+          userId: userId,
+          timestamp: currentTime
+        }),
       });
 
       const data = await response.json();
+      
+      // If we got a userId, store it for future sessions
+      if (data.userId && (!userId || userId !== data.userId)) {
+        setUserId(data.userId);
+        localStorage.setItem('mindfulchat_user_id', data.userId);
+      }
       
       // Small delay to make the interaction feel more natural
       setTimeout(() => {
@@ -116,7 +188,11 @@ function Chatbot({ onBack }) {
       'loneliness': 'var(--accent)',
       'academic': 'var(--primary)',
       'stress': 'var(--warning)',
-      'general': 'var(--text-primary)'
+      'general': 'var(--text-primary)',
+      'coping_strategies': 'var(--success)',
+      'positive_reinforcement': 'var(--info)',
+      'validation': 'var(--primary-light)',
+      'empathy': 'var(--accent-light)'
     };
     return colors[category] || 'var(--text-primary)';
   };
@@ -202,6 +278,13 @@ function Chatbot({ onBack }) {
               onClick={() => setShowInfoPanel(!showInfoPanel)}
             >
               <FontAwesomeIcon icon={faInfoCircle} />
+            </button>
+            <button 
+              className="reset-button"
+              onClick={resetConversation}
+              title="Start a new conversation"
+            >
+              <FontAwesomeIcon icon={faTrash} />
             </button>
             <div className="security-badge">
               <FontAwesomeIcon icon={faShieldAlt} />
@@ -327,4 +410,4 @@ function Chatbot({ onBack }) {
   );
 }
 
-export default Chatbot; 
+export default Chatbot;
