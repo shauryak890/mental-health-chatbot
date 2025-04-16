@@ -26,17 +26,21 @@ except LookupError:
 # Initialize lemmatizer
 lemmatizer = WordNetLemmatizer()
 
-# Load responses from JSON file
-with open('responses.json', 'r') as f:
-    responses = json.load(f)
+# Load responses from JSON file as fallback
+try:
+    with open('responses.json', 'r') as f:
+        responses = json.load(f)
+except:
+    responses = {}
 
 # User session storage - in a production environment, this would be a database
 conversation_history = {}
 user_profiles = {}
 
-# HuggingFace API for complex queries (free tier)
-HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
-HUGGINGFACE_API_KEY = ""  # Add your free API key here
+# ShuttleAI API for better, more human-like responses
+# You would need to sign up at https://shuttleai.app/ for a free API key
+SHUTTLE_API_URL = "https://api.shuttleai.app/v1/chat/completions"
+SHUTTLE_API_KEY = "shuttle-l8ph7k_RfY3hT1jhzdk_pcw2qvl-K6CQK_d3aXD008iq_kLsJ0_U2h1dHRsZUFJQ6Nzj3dWSIaWt-sVZRBiuxHmiN-m35ew-g5VSsZbQKpOa_2EhUTY"  # Add your free API key here
 
 # Common conversation patterns for more natural response selection
 conversation_patterns = {
@@ -201,51 +205,68 @@ def get_conversational_response(pattern, user_id=None):
     user_name = ""
     if user_id in user_profiles and "name" in user_profiles[user_id]:
         user_name = user_profiles[user_id]["name"]
+        name_greeting = f" {user_name}" if random.random() < 0.5 else ""
+    else:
+        name_greeting = ""
     
     # Map patterns to friendly, casual responses
     if pattern == 'greeting':
-        if 'greetings' in responses:
-            return random.choice(responses['greetings']), 'greetings'
-        else:
-            greetings = [
-                f"Hey there! How's it going today?",
-                f"Hi! What's been on your mind lately?",
-                f"Hello! How's your day shaping up?",
-                f"Hey! Good to hear from you. How are things?",
-                f"Hi there! What's happening in your world today?"
-            ]
-            return random.choice(greetings), 'general'
+        greetings = [
+            f"Hey{name_greeting}! How are you doing today?",
+            f"Hi there{name_greeting}! What's up?",
+            f"Hello{name_greeting}! How's it going?",
+            f"Hey, good to see you{name_greeting}! How's your day been?",
+            f"Hi{name_greeting}! What's happening?",
+            f"Hey{name_greeting}! 👋 How's everything going?",
+            f"Hi there! Nice to chat with you{name_greeting}!",
+            f"Hey{name_greeting}! What's new with you?",
+            f"Hello{name_greeting}! How's life treating you?",
+            f"Hey{name_greeting}! Good to hear from you! How have you been?",
+        ]
+        return random.choice(greetings), 'greetings'
     
     elif pattern == 'farewell':
-        if 'farewells' in responses:
-            return random.choice(responses['farewells']), 'farewells'
-        else:
-            farewells = [
-                f"Talk to you later! Remember I'm here whenever you need me.",
-                f"Take care! Come back anytime you want to chat.",
-                f"Bye for now! Hope the rest of your day goes well.",
-                f"See you soon! I'll be here when you want to talk again.",
-                f"Later! Remember to be kind to yourself today."
-            ]
-            return random.choice(farewells), 'general'
+        farewells = [
+            f"Talk to you later{name_greeting}! I'm here whenever you need me.",
+            f"Take care{name_greeting}! Come back anytime.",
+            f"Bye for now! Hope the rest of your day goes well{name_greeting}.",
+            f"See you soon{name_greeting}! I'll be here when you want to talk again.",
+            f"Later{name_greeting}! Have a good one!",
+            f"Catch you later{name_greeting}! 👋",
+            f"Goodbye{name_greeting}! It was nice chatting with you.",
+            f"Until next time{name_greeting}! Take care of yourself.",
+            f"See ya{name_greeting}! Drop by anytime you want to chat.",
+            f"Bye{name_greeting}! Hope to talk again soon!"
+        ]
+        return random.choice(farewells), 'farewells'
     
     elif pattern == 'thanks':
         thanks_responses = [
-            f"No problem at all! That's what friends are for.",
-            f"Happy to help! What else is on your mind?",
-            f"Anytime! I'm always here to listen and chat.",
-            f"You're welcome! Is there anything else you'd like to talk about?",
-            f"That's what I'm here for! How are you feeling now?"
+            f"No problem at all{name_greeting}! That's what I'm here for.",
+            f"Happy to help{name_greeting}! Anything else on your mind?",
+            f"Anytime{name_greeting}! I'm always here to listen.",
+            f"You're welcome{name_greeting}! Is there something else you'd like to chat about?",
+            f"Of course{name_greeting}! How are you feeling now?",
+            f"Glad I could help{name_greeting}! 😊",
+            f"No worries{name_greeting}! That's why I'm here.",
+            f"My pleasure{name_greeting}! Anything else I can help with?",
+            f"You got it{name_greeting}! Always here when you need to talk.",
+            f"Sure thing{name_greeting}! How's everything else going?"
         ]
         return random.choice(thanks_responses), 'general'
     
     elif pattern == 'confusion':
         clarifications = [
-            f"Sorry if I wasn't clear! What part confused you?",
-            f"Let me try to explain that better. What didn't make sense?",
-            f"My bad if that was confusing. Let's try a different approach.",
-            f"Sometimes I don't express things well. What would help make it clearer?",
-            f"Sorry about that! Let me try again in a simpler way."
+            f"Sorry if I wasn't clear{name_greeting}! What confused you?",
+            f"Let me try again{name_greeting}. What didn't make sense?",
+            f"My bad{name_greeting}! Let me explain differently.",
+            f"Sorry about that{name_greeting}. What can I clarify?",
+            f"I might have been a bit unclear. What part lost you{name_greeting}?",
+            f"Oops, let me be clearer{name_greeting}! What part was confusing?",
+            f"Sorry for the confusion{name_greeting}. Let's try a different approach.",
+            f"My mistake{name_greeting}! Let me try to be more clear.",
+            f"I didn't explain that well. What specifically confused you{name_greeting}?",
+            f"Sorry about that{name_greeting}! Let's back up and try again."
         ]
         return random.choice(clarifications), 'general'
     
@@ -314,13 +335,23 @@ def analyze_message_advanced(message, user_id=None):
     # Check for common conversation patterns first
     conversation_pattern = detect_conversation_pattern(message)
     if conversation_pattern:
-        # Map 'greeting' to 'greetings' to match the responses.json format
         if conversation_pattern == 'greeting':
-            return 'greetings', "conversation_pattern"
+            return 'greetings', "conversation_pattern" 
         elif conversation_pattern == 'farewell':
             return 'farewells', "conversation_pattern"
         else:
             return conversation_pattern, "conversation_pattern"
+    
+    # Simple text matches for greetings that might be missed by the pattern detector
+    text_lower = message.lower().strip()
+    basic_greetings = ['hi', 'hello', 'hey', 'greetings', 'sup', 'yo', 'hiya', 'whats up', "what's up"]
+    if text_lower in basic_greetings or text_lower.startswith('hi ') or text_lower.startswith('hello ') or text_lower.startswith('hey '):
+        return 'greetings', "conversation_pattern"
+    
+    # Handle "how are you" variants directly
+    how_are_you_patterns = ['how are you', 'how r u', 'how u doing', 'how are u', 'how you doing', 'hows it going', "how's it going"]
+    if any(pattern in text_lower for pattern in how_are_you_patterns) or text_lower in how_are_you_patterns:
+        return 'greetings', "conversation_pattern"
     
     # Preprocess the message
     processed_tokens = preprocess_text(message)
@@ -406,14 +437,268 @@ def find_relevant_messages(history, current_message, max_count=3):
     # Return the most relevant messages
     return [msg for _, msg in scored_messages[:max_count]]
 
+def call_shuttle_api(input_text, category, user_id=None):
+    """Call ShuttleAI API to get a more natural response"""
+    if not SHUTTLE_API_KEY:
+        return None
+
+    # Get user name for personalization if available
+    user_name = ""
+    if user_id in user_profiles and "name" in user_profiles[user_id]:
+        user_name = user_profiles[user_id]["name"]
+    
+    # Get conversation history for context
+    context = []
+    if user_id in conversation_history:
+        # Get last 5 messages for context
+        for msg in conversation_history[user_id][-5:]:
+            role = "user" if msg.get('role') == 'user' else "assistant"
+            context.append({"role": role, "content": msg.get('text', '')})
+    
+    # Create a system prompt based on the category
+    system_prompt = f"You are a friendly mental health support chatbot for college students. Be conversational, empathetic, and supportive. Use casual language with some slang and emojis occasionally to sound more natural and relatable. Your responses should be helpful but not clinical."
+    
+    if category == 'financial':
+        system_prompt += " The student is asking about financial stress or money problems. Be understanding and offer practical advice."
+    elif category == 'academic':
+        system_prompt += " The student is asking about academic pressure or study-related stress. Provide supportive and practical guidance."
+    elif category == 'loneliness':
+        system_prompt += " The student is feeling lonely or socially isolated. Be especially empathetic and suggest ways to connect with others."
+    elif category == 'stress':
+        system_prompt += " The student is experiencing stress or anxiety. Offer calming techniques and supportive language."
+    
+    if user_name:
+        system_prompt += f" The student's name is {user_name}, occasionally use their name naturally in your response."
+
+    # Prepare the API request
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Add conversation history for context
+    if context:
+        messages.extend(context)
+    
+    # Add the current user message
+    messages.append({"role": "user", "content": input_text})
+    
+    # Log the request we're about to make
+    print(f"ShuttleAI Request - Input: '{input_text}', Category: {category}")
+    
+    try:
+        # Try using a smaller model first if the main one is out of credits
+        models_to_try = ["shuttle-2", "shuttle-1", "shuttle-3"]
+        
+        for model in models_to_try:
+            try:
+                print(f"Trying model: {model}")
+                response = requests.post(
+                    SHUTTLE_API_URL,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {SHUTTLE_API_KEY}"
+                    },
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "temperature": 0.7,
+                        "max_tokens": 350
+                    },
+                    timeout=10  # Timeout after 10 seconds
+                )
+                
+                # Log the response status
+                print(f"ShuttleAI Response Status for {model}: {response.status_code}")
+                
+                if response.status_code == 200:
+                    try:
+                        result = response.json()
+                        if 'choices' in result and len(result['choices']) > 0:
+                            response_content = result['choices'][0]['message']['content']
+                            print(f"ShuttleAI Response Content: '{response_content[:50]}...'")
+                            return response_content
+                        else:
+                            print(f"ShuttleAI Response Missing Choices: {result}")
+                    except Exception as parse_error:
+                        print(f"ShuttleAI Response Parse Error: {parse_error}")
+                elif response.status_code == 402:
+                    # Out of credits for this model, try the next one
+                    print(f"Out of credits for {model}, trying next model...")
+                    continue
+                else:
+                    print(f"ShuttleAI Error with {model}: {response.text}")
+                    # Try the next model if this one didn't work
+                    continue
+            except Exception as model_error:
+                print(f"Error with model {model}: {model_error}")
+                # Try the next model
+                continue
+    except Exception as e:
+        print(f"Error calling ShuttleAI API: {e}")
+    
+    print("ShuttleAI Fallback: Using local responses")
+    return None
+
+def generate_custom_fallback_response(input_text, category, user_id=None):
+    """Generate a custom fallback response when API fails"""
+    
+    # Get user name for personalization if available
+    user_name = ""
+    if user_id in user_profiles and "name" in user_profiles[user_id]:
+        user_name = user_profiles[user_id]["name"]
+        name_greeting = f" {user_name}" if random.random() < 0.3 else ""
+    else:
+        name_greeting = ""
+    
+    # Add some randomness to make responses feel more natural
+    emojis = ["", "", "", "😊", "👋", "💭", "🎓", "💬", "🙂", "👍"]
+    emoji = random.choice(emojis)
+    
+    # Common phrase starters based on category
+    financial_starters = [
+        f"Talking about money can be tough{name_greeting}! ",
+        f"Financial stress is super common in college. ",
+        f"Money issues are definitely challenging{name_greeting}. ",
+        f"Campus life is expensive, right? ",
+        f"Being broke as a student is practically a universal experience! "
+    ]
+    
+    academic_starters = [
+        f"School pressure can feel overwhelming{name_greeting}. ",
+        f"Academic stress is something most students deal with. ",
+        f"College work can pile up so quickly! ",
+        f"Balancing all your classes can be a lot{name_greeting}. ",
+        f"Those deadlines and exams can really get to you, huh? "
+    ]
+    
+    loneliness_starters = [
+        f"Feeling disconnected is really hard{name_greeting}. ",
+        f"Social stuff in college can be complicated. ",
+        f"Making connections takes time. ",
+        f"College can sometimes feel isolating despite being surrounded by people. ",
+        f"It's totally normal to feel a bit lost socially sometimes. "
+    ]
+    
+    stress_starters = [
+        f"That sounds really overwhelming{name_greeting}. ",
+        f"Stress can really build up in college. ",
+        f"It's a lot to handle sometimes, isn't it? ",
+        f"Taking care of your mental health is super important. ",
+        f"College can really test your stress limits. "
+    ]
+    
+    general_starters = [
+        f"Hey{name_greeting}! ",
+        f"I hear you. ",
+        f"Thanks for sharing that{name_greeting}. ",
+        f"I appreciate you opening up. ",
+        f"That's really interesting. "
+    ]
+    
+    casual_starters = [
+        f"Cool{name_greeting}! ",
+        f"Awesome! ",
+        f"Nice to chat about this! ",
+        f"That's fun to talk about. ",
+        f"Great question! "
+    ]
+    
+    # Select appropriate starter based on category
+    if category == 'financial':
+        starter = random.choice(financial_starters)
+    elif category == 'academic':
+        starter = random.choice(academic_starters)
+    elif category == 'loneliness':
+        starter = random.choice(loneliness_starters)
+    elif category == 'stress':
+        starter = random.choice(stress_starters)
+    elif category in ['hobbies', 'entertainment', 'campus_life', 'food', 'future_plans', 'technology', 'weather', 'positive_chat', 'casual_chat']:
+        starter = random.choice(casual_starters)
+    else:
+        starter = random.choice(general_starters)
+    
+    # Common follow-up questions to encourage conversation
+    follow_ups = [
+        "What's been your experience with that?",
+        "How has that been affecting you?",
+        "What's helped you deal with this in the past?",
+        "What do you think would help most right now?",
+        "How long have you been feeling this way?",
+        "Is there a specific part of this that's most challenging for you?",
+        "Have you talked to anyone else about this?",
+        "What would make this situation better for you?",
+        "Is there something specific you're looking for advice on?",
+        "Would it help to talk more about this?"
+    ]
+    
+    # Construct the response
+    # For questions, try to provide some insight before asking a follow-up
+    if input_text.strip().endswith('?'):
+        question_insights = {
+            'financial': [
+                "Managing money as a student involves finding that balance between necessities and enjoyment.",
+                "Student budgets are always tight, but small changes can make a big difference.",
+                "Financial stress is one of the most common issues students face, so you're definitely not alone.",
+                "College financial systems can be confusing, but there are often resources to help navigate them.",
+                "Many students don't realize how many financial support options are actually available."
+            ],
+            'academic': [
+                "Finding your own study rhythm is often more important than following generic advice.",
+                "Academic pressure affects everyone differently, but breaks are essential for everyone.",
+                "What works for one student might not work for another when it comes to studying.",
+                "Balance between courses is something even the best students struggle with sometimes.",
+                "Most professors understand student stress more than they let on."
+            ],
+            'loneliness': [
+                "Meaningful connections often happen in unexpected places on campus.",
+                "Quality friendships usually take time to develop, especially in new environments.",
+                "Many students feel lonely even when surrounded by others on campus.",
+                "Finding your community often happens through shared interests rather than forced interactions.",
+                "Social media can sometimes make campus loneliness feel worse by comparison."
+            ],
+            'stress': [
+                "Small daily self-care habits often help more than big stress-relief attempts.",
+                "Stress in college often comes from multiple sources piling up at once.",
+                "Your body gives physical signals about stress that are important to recognize.",
+                "Taking breaks isn't lazy - it's actually essential for productivity.",
+                "Different stress relief techniques work for different people."
+            ]
+        }
+        
+        if category in question_insights:
+            insight = random.choice(question_insights[category])
+            return f"{starter}{emoji} {insight} {random.choice(follow_ups)}"
+        else:
+            return f"{starter}{emoji} That's a good question. {random.choice(follow_ups)}"
+    else:
+        # For statements, add empathy and a follow-up
+        return f"{starter}{emoji} {random.choice(follow_ups)}"
+
 def get_response_with_context(category, user_id, conversation_pattern=None):
     """Get a response based on category and conversation context"""
+    # First try to use custom fallback responses since ShuttleAI requires credits
     # If it's a common conversation pattern, handle it differently
     if conversation_pattern:
         response, response_category = get_conversational_response(conversation_pattern, user_id)
         if response:
             return response, response_category
     
+    # Generate a custom fallback response
+    if user_id in conversation_history and len(conversation_history[user_id]) > 0:
+        last_message = conversation_history[user_id][-1].get('text', '') if conversation_history[user_id][-1].get('role') == 'user' else ''
+        custom_response = generate_custom_fallback_response(last_message, category, user_id)
+        if custom_response:
+            return custom_response, category
+    
+    # Only try ShuttleAI if explicitly enabled
+    if SHUTTLE_API_KEY and False:  # Disabled for now to avoid credit usage
+        if user_id in conversation_history and len(conversation_history[user_id]) > 0:
+            last_message = conversation_history[user_id][-1].get('text', '') if conversation_history[user_id][-1].get('role') == 'user' else ''
+            
+            # Try to get response from ShuttleAI
+            shuttle_response = call_shuttle_api(last_message, category, user_id)
+            if shuttle_response:
+                return shuttle_response, category
+    
+    # If all else fails, fall back to the existing responses.json
     # Safety check - make sure the category exists in responses
     if category not in responses:
         print(f"Warning: Category '{category}' not found in responses, using 'general' instead")
@@ -496,76 +781,11 @@ def get_response_with_context(category, user_id, conversation_pattern=None):
     
     return basic_response, category
 
-def call_huggingface_api(input_text, history=None):
-    """Call HuggingFace API for complex or undefined queries"""
-    if not HUGGINGFACE_API_KEY:
-        return None
-    
-    # Include conversation history for better context
-    conversation_context = ""
-    if history and len(history) > 0:
-        # Get last few exchanges
-        recent_exchanges = history[-6:]  # Last 3 exchanges (6 messages)
-        for msg in recent_exchanges:
-            role = "User: " if msg.get('role') == 'user' else "Assistant: "
-            conversation_context += f"{role}{msg.get('text', '')}\n"
-    
-    # Combine context with current input
-    full_input = conversation_context + f"User: {input_text}\nAssistant:"
-    
-    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-    payload = {"inputs": full_input}
-    
-    try:
-        response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload)
-        if response.status_code == 200:
-            return response.json()[0].get('generated_text')
-        else:
-            print(f"HuggingFace API error: {response.status_code}, {response.text}")
-            return None
-    except Exception as e:
-        print(f"Error calling HuggingFace API: {e}")
-        return None
-
 def get_session_id():
     """Generate or retrieve a session ID for the current user"""
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
     return session['user_id']
-
-def create_fallback_response(message, user_id=None):
-    """Create a more intelligent fallback response when external API fails"""
-    # Try to extract the core question or concern
-    question_pattern = re.search(r'(?:can|could|would|how|why|what|when|where|is|are|do|does|did|should|has|have).*\?', message, re.IGNORECASE)
-    
-    # Get user name if available
-    user_name = ""
-    if user_id in user_profiles and "name" in user_profiles[user_id]:
-        user_name = user_profiles[user_id]["name"]
-        name_prefix = f"{user_name}, " if random.random() < 0.3 else ""
-    else:
-        name_prefix = ""
-    
-    # For questions, acknowledge we need to think more
-    if question_pattern:
-        questioning_responses = [
-            f"{name_prefix}That's a great question. I need to think about that more, but my initial thought is that it depends on your specific situation. Could you tell me more about what you're experiencing?",
-            f"I'm still learning about that topic. What aspect of it matters most to you right now?",
-            f"That's something I'd like to explore with you. Before I share my thoughts, could you tell me why you're asking about this?",
-            f"That's an interesting question. I don't have a simple answer, but I'd be happy to discuss it more with you. What are your thoughts on it?",
-            f"{name_prefix}I appreciate you bringing that up. It's a complex topic, and I'd like to understand your perspective better before responding. What led you to ask about this?"
-        ]
-        return random.choice(questioning_responses), 'general'
-    
-    # For statements or general conversation
-    general_responses = [
-        f"{name_prefix}I appreciate you sharing that with me. Would you like to tell me more about what's been on your mind lately?",
-        f"Thanks for opening up. I'm here to listen whenever you want to talk more about it.",
-        f"I value your perspective on this. Is there a specific aspect you'd like to explore further?",
-        f"{name_prefix}That's really insightful. How long have you been thinking about this?",
-        f"I hear you. Sometimes it helps to talk these things through. What else has been going on?"
-    ]
-    return random.choice(general_responses), 'general'
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -597,44 +817,26 @@ def chat():
         # Get contextual response
         response_text, response_category = get_response_with_context(category, user_id, conversation_pattern)
         
-        # For general category with longer messages, try to use external API first
-        should_use_api = (category == 'general' and len(user_message.split()) > 10) or data.get('forceApi', False)
-        
-        if should_use_api:
-            api_response = call_huggingface_api(user_message, conversation_history[user_id])
-            if api_response:
-                response_text = api_response
-                response_category = 'general'
-            else:
-                # If API fails, create a more intelligent fallback
-                fallback_response, fallback_category = create_fallback_response(user_message, user_id)
-                response_text = fallback_response
-                response_category = fallback_category
-        
         # Add bot response to history
         conversation_history[user_id].append({
             'text': response_text,
             'role': 'bot',
             'category': response_category,
-            'timestamp': data.get('timestamp', '')
+            'timestamp': ''
         })
         
-        # Limit history size to prevent memory issues (last 20 messages)
-        if len(conversation_history[user_id]) > 20:
-            conversation_history[user_id] = conversation_history[user_id][-20:]
-        
+        # Return response with userId for session tracking
         return jsonify({
             'response': response_text,
             'category': response_category,
             'userId': user_id
         })
     except Exception as e:
-        print(f"Error in chat endpoint: {str(e)}")
+        print(f"Error in chat endpoint: {e}")
         return jsonify({
-            'response': "I'm having trouble processing that right now. Could you try again?",
-            'category': 'general',
-            'error': str(e)
-        }), 200  # Return 200 instead of 500 to prevent CORS issues
+            'response': "I'm having trouble processing your message right now. Could you try again?",
+            'category': 'general'
+        }), 200  # Still return 200 to avoid client-side errors
 
 @app.route('/api/history', methods=['GET'])
 def get_history():

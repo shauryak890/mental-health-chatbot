@@ -15,9 +15,10 @@ import {
   faComments,
   faTrash
 } from '@fortawesome/free-solid-svg-icons';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Chatbot({ onBack }) {
+  const navigate = useNavigate();
   // State Management
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -200,6 +201,12 @@ function Chatbot({ onBack }) {
   // Simple emoji picker
   const emojis = ['😊', '😔', '😢', '😡', '😌', '🤔', '❤️', '👍'];
 
+  // Handle going back to home page
+  const handleBackClick = () => {
+    onBack(); // Call onBack to update state in parent component
+    navigate('/'); // Navigate to home page
+  };
+
   return (
     <div className="chat-container">
       <motion.div 
@@ -213,7 +220,7 @@ function Chatbot({ onBack }) {
             <FontAwesomeIcon icon={faHeartPulse} className="logo-icon" />
             MindfulChat
           </div>
-          <button className="back-button" onClick={onBack}>
+          <button className="back-button" onClick={handleBackClick}>
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
         </div>
@@ -260,7 +267,7 @@ function Chatbot({ onBack }) {
       <div className="chat-main">
         {/* Header Section */}
         <div className="chat-header">
-          <button className="back-button" onClick={onBack}>
+          <button className="back-button" onClick={handleBackClick}>
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           
